@@ -4,6 +4,7 @@
 
 ## Blockchain Hosted Unified Mutation Infrastructure
 
+
 > A government-oriented hybrid Web2 + Web3 land registry platform designed to create transparent, tamper-evident, and auditable property ownership records.
 
 ```
@@ -243,7 +244,7 @@ Stores:
 
 Users pay using Indian Rupees (₹) through a payment gateway.
 
-Citizens do not need to purchase cryptocurrency or pay blockchain gas directly.
+Citizens do not need to purchase cryptocurrency or pay blockchain gas directly this is mange in backend by government .
 
 ---
 
