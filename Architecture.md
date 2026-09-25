@@ -1,675 +1,715 @@
-# TECHNICAL ARCHITECTURE DOCUMENT
+# B.H.U.M.I. --- Technical Architecture & System Workflow
 
-## PROJECT B.H.U.M.I.
+**Project:** B.H.U.M.I. (Blockchain Hosted Unified Mutation
+Infrastructure)\
+**Document Type:** Technical Architecture and End-to-End Workflow\
+------------------------------------------------------------------------
 
-### Blockchain Hosted Unified Mutation Infrastructure
+## 1. Document Purpose
 
-**Project Type:** College Minor Project
-**Architecture Type:** Hybrid Web2 + Web3 Land Registry Platform
-**Primary Domain:** Government / Land Registry / Property Management
-**Version:** 1.0
+This document combines the project's system architecture and operational
+workflow into a single reference for development, review, testing, and
+future implementation.
 
----
+B.H.U.M.I. is designed as a government-oriented digital land transaction
+and mutation platform. It uses a **hybrid Web2 + Web3 architecture**:
 
-# 1. Introduction
+-   PostgreSQL handles application data and high-speed operational
+    queries.
+-   Secure off-chain storage handles sensitive documents and
+    identity-related data.
+-   SHA-256 hashes provide cryptographic fingerprints of verified
+    documents and metadata.
+-   A Solidity smart contract provides the blockchain trust,
+    ownership-history, and audit layer.
+-   Government-authorized users control final blockchain registration
+    and mutation actions.
 
-B.H.U.M.I. (Blockchain Hosted Unified Mutation Infrastructure) is a government-oriented hybrid Web2 + Web3 digital land registry platform designed to provide transparent, tamper-evident, and auditable property ownership records.
+> **Important:** B.H.U.M.I. is a prototype/architectural model. It does
+> not replace official government land-record systems or legal
+> registration infrastructure. Production deployment would require
+> government integration, legal approval, official identity/KYC
+> infrastructure, payment providers, and an appropriate blockchain
+> network.
 
-The platform combines conventional web technologies, relational/document databases, secure document storage, payment infrastructure, government verification workflows, cryptographic hashing, and blockchain technology.
+------------------------------------------------------------------------
 
-The primary purpose of B.H.U.M.I. is **not to replace existing government land databases**. Instead, blockchain acts as an additional verification and audit layer for verified property records.
+## 2. Project Overview
 
-The system allows citizens to submit property applications, upload required documents, complete payments, and track application status. Government authorities can verify KYC information, property documents, and ownership details before an authorized Registrar records the verified property state on the blockchain.
+### 2.1 Full Form
 
----
+**B.H.U.M.I. --- Blockchain Hosted Unified Mutation Infrastructure**
 
-# 2. Project Objectives
+### 2.2 Core Idea
 
-The major objectives of B.H.U.M.I. are:
+The system connects property registration, verification, ownership
+transfer, and mutation into one auditable workflow.
 
-1. To provide a digital platform for property registration and ownership management.
-2. To simplify the interaction between citizens and government authorities.
-3. To provide a structured property verification workflow.
-4. To securely manage property and KYC documents.
-5. To generate SHA-256 cryptographic hashes for verified documents and metadata.
-6. To maintain tamper-evident property records using blockchain.
-7. To maintain a transparent ownership history.
-8. To provide an auditable record of important property transactions.
-9. To allow ownership transfers through a controlled verification process.
-10. To support INR-based payments without requiring citizens to own cryptocurrency.
-11. To maintain sensitive personal information outside the blockchain.
-12. To provide role-based access to citizens and authorized government officials.
+The central architectural principle is:
 
----
+> **Keep operational and sensitive data off-chain; store cryptographic
+> proofs and finalized ownership events on-chain.**
 
-# 5. High-Level Architecture
+This avoids placing large documents, personal information, or frequently
+queried application data directly on the blockchain.
 
-```text
-                         B.H.U.M.I. PLATFORM
-                                  |
-                  ┌───────────────┴───────────────┐
-                  |                               |
-             CITIZEN                         GOVERNMENT
-                  |                               |
-             User Login                      Official Login
-                  |                               |
-                  ▼                               ▼
-          Citizen Dashboard              Government Dashboard
-                  |                               |
-                  └───────────────┬───────────────┘
-                                  |
-                                  ▼
-                         React Frontend
-                                  |
-                                  ▼
-                      Node.js + Express Backend
-                                  |
-             ┌────────────────────┼────────────────────┐
-             |                    |                    |
-             ▼                    ▼                    ▼
-        Database           Secure Storage       Payment Gateway
-      PostgreSQL/           IPFS / S3              INR
-        MongoDB
-             |
-             ▼
-       Verification Layer
-             |
-      ┌──────┼───────┐
-      |      |       |
-     KYC   Document Property
-   Verify   Verify   Verify
-      |      |       |
-      └──────┼───────┘
-             |
-             ▼
-       SHA-256 Hashing
-             |
-             ▼
-      Authorized Registrar
-             |
-             ▼
-       ethers.js / Backend
-             |
-             ▼
-      LandRegistry Smart Contract
-             |
-             ▼
-          Blockchain
-             |
-      ┌──────┼──────────┐
-      |      |          |
- Ownership  Document   Audit
- History     Proof     Trail
+### 2.3 What the Blockchain Does
+
+The blockchain acts as a **trust and audit layer**, rather than as the
+primary application database.
+
+It can maintain:
+
+-   Property ID
+-   Current owner blockchain identity
+-   Document hash
+-   Owner-photo hash, where applicable
+-   Metadata hash
+-   Registration timestamp
+-   Last transfer timestamp
+-   Property status
+-   Ownership-transfer history
+-   Transaction/event references
+
+### 2.4 What Remains Off-Chain
+
+The following remain in conventional application infrastructure:
+
+-   User profiles
+-   Login/session information
+-   KYC information
+-   Aadhaar/identity information
+-   Phone and address information
+-   Property metadata used for application queries
+-   Land records and Khasra information
+-   Uploaded documents
+-   Photos
+-   Application records
+-   Appointments
+-   Payment records
+-   Verification records
+-   Audit logs
+-   Generated e-Registry PDFs
+
+------------------------------------------------------------------------
+
+## 3. Architectural Principles
+
+### 3.1 Hybrid Architecture
+
+B.H.U.M.I. separates the application layer from the blockchain trust
+layer.
+
+``` text
+Application / Operational Layer
+        |
+        +-- React frontend
+        +-- Node.js / Express backend
+        +-- PostgreSQL
+        +-- Secure document storage
+        +-- Payment gateway
+        +-- KYC / verification services
+        |
+        v
+Cryptographic Trust Layer
+        |
+        +-- SHA-256 hashes
+        +-- Authorized Registrar
+        +-- LandRegistry smart contract
+        +-- Blockchain ledger
 ```
 
----
+### 3.2 Backend-Controlled Blockchain Transactions
 
-# 6. Architectural Principles
+The frontend does not directly write registry data to the blockchain.
 
-## 6.1 Hybrid Architecture
+The intended flow is:
 
-B.H.U.M.I. combines traditional Web2 infrastructure with blockchain technology.
+``` text
+Citizen / Government User
+        |
+        v
+React Frontend
+        |
+        v
+Node.js + Express Backend
+        |
+        v
+Authentication + RBAC + Verification
+        |
+        v
+SHA-256 Hash Generation
+        |
+        v
+Authorized Registrar
+        |
+        v
+Registrar Wallet
+        |
+        v
+LandRegistry Smart Contract
+        |
+        v
+Blockchain
+```
 
-Traditional infrastructure manages:
+This keeps blockchain authorization under controlled government/backend
+workflows.
 
-* User accounts
-* Property information
-* KYC
-* Documents
-* Applications
-* Payments
-* Verification workflows
+### 3.3 Separation of Concerns
 
-Blockchain manages:
+The system is divided into:
 
-* Cryptographic proofs
-* Ownership records
-* Timestamps
-* Ownership history
-* Audit information
+1.  Presentation layer
+2.  Application/API layer
+3.  Core business services
+4.  Data and storage layer
+5.  Verification layer
+6.  Hashing and blockchain layer
+7.  External integrations
+8.  Reporting and monitoring
 
----
+------------------------------------------------------------------------
 
-## 6.2 Off-Chain Sensitive Data
+# 4. System Architecture
 
-Sensitive information is stored outside the blockchain.
+## 4.1 High-Level Architecture Diagram
 
-Examples include:
+The repository should keep the architecture diagram at:
 
-* Aadhaar information
-* KYC documents
-* Phone numbers
-* Residential addresses
-* Owner photographs
-* Property documents
-* Payment information
-* Application records
+`docs/assets/bhumi-system-architecture.png`
 
----
+A Mermaid version is also maintained below so the architecture remains
+editable in source control.
 
-## 6.3 Blockchain as a Proof Layer
+``` mermaid
+flowchart TB
 
-Blockchain should be treated as a **verification and audit layer** rather than a replacement for the government's legal land database.
+    subgraph USERS["Users"]
+        C["Citizen"]
+        LA["Local Authority"]
+        HQ["Government HQ"]
+    end
 
-A blockchain record does not automatically establish the legal validity of a property document.
+    subgraph FRONTEND["Frontend — React + Vite + Tailwind"]
+        UI["Citizen Portal / Government Portal"]
+    end
 
-Government verification remains necessary before a property is recorded as verified.
+    subgraph BACKEND["Backend — Node.js + Express"]
+        API["REST API"]
+        AUTH["Authentication & RBAC"]
+        LAND["Land Search"]
+        APP["Application / Appointment"]
+        DOC["Document Service"]
+        PAY["Payment Service"]
+        VERIFY["Verification Service"]
+        MUT["Registry / Mutation Service"]
+        HASH["Hashing Service"]
+        BC["Blockchain Service"]
+        AUDIT["Audit / Analytics / Notifications"]
+    end
 
----
+    subgraph DATA["Data & Storage"]
+        DB[("PostgreSQL")]
+        STORE[("IPFS / S3 / Secure Storage")]
+        CACHE[("Redis — Optional")]
+    end
 
-# 7. User Roles
+    subgraph EXT["External Services"]
+        PG["INR Payment Gateway"]
+        MSG["Email / SMS / OTP"]
+    end
 
-## 7.1 Citizen
+    subgraph VERIFYL["Verification Layer"]
+        KYC["KYC Verification"]
+        DOCV["Document Verification"]
+        PROP["Property Verification"]
+    end
 
-The Citizen can:
+    subgraph CHAIN["Blockchain Layer"]
+        SHA["SHA-256 Hashing"]
+        REG["Authorized Registrar"]
+        SC["LandRegistry.sol"]
+        LEDGER[("Ethereum / EVM Testnet or Local Network")]
+    end
 
-* Register/Login
-* Search properties
-* Submit property applications
-* Upload documents
-* Provide KYC information
-* Make payments
-* Track application status
-* Request ownership transfers
-* View ownership history
+    subgraph OUTPUT["Outputs"]
+        CD["Citizen Dashboard"]
+        GD["Government Dashboard"]
+        HD["HQ Analytics / Audit"]
+        PV["Public Verification"]
+    end
 
----
+    C --> UI
+    LA --> UI
+    HQ --> UI
 
-## 7.2 Government Official
+    UI --> API
+    API --> AUTH
+    API --> LAND
+    API --> APP
+    API --> DOC
+    API --> PAY
+    API --> VERIFY
+    API --> MUT
+    API --> AUDIT
 
-Government officials can:
+    LAND --> DB
+    APP --> DB
+    DOC --> STORE
+    AUTH --> DB
+    AUDIT --> DB
+    CACHE -.-> API
 
-* Login securely
-* View pending applications
-* Verify KYC
-* Verify property documents
-* Verify property information
-* Verify ownership
-* Approve applications
-* Reject applications
-* Request document resubmission
-* Initiate blockchain registration
-* Review blockchain transactions
+    PAY --> PG
+    APP --> MSG
 
----
+    VERIFY --> KYC
+    VERIFY --> DOCV
+    VERIFY --> PROP
 
-## 7.3 Authorized Registrar
+    MUT --> HASH
+    HASH --> SHA
+    SHA --> REG
+    REG --> SC
+    SC --> LEDGER
 
-The Authorized Registrar performs the blockchain registration step after successful government verification.
+    BC --> SC
+    LEDGER --> BC
+    BC --> DB
+
+    API --> CD
+    API --> GD
+    API --> HD
+    API --> PV
+```
+
+------------------------------------------------------------------------
+
+# 5. Technology Stack
+
+  Layer              Technology                            Purpose
+  ------------------ ------------------------------------- --------------------------------------
+  Frontend           React.js                              Web application UI
+  Build Tool         Vite                                  Frontend development/build
+  Styling            Tailwind CSS                          UI styling
+  Backend            Node.js + Express.js                  REST APIs and business logic
+  Database           PostgreSQL                            Relational application and land data
+  ORM                Prisma or equivalent                  Database access
+  Smart Contract     Solidity                              Registry and ownership logic
+  Blockchain         EVM-compatible network                Trust/audit layer
+  Web3 Integration   Ethers.js                             Backend-to-contract interaction
+  Hashing            SHA-256                               Document/data integrity
+  File Storage       IPFS / S3 / secure storage            Document storage
+  Authentication     JWT / secure sessions + OTP           Authentication
+  Payments           INR payment gateway                   Registry/mutation fee processing
+  Notifications      Email/SMS                             OTP, alerts, status notifications
+  Local Blockchain   Hardhat/Ganache-style local network   MVP testing
+  Deployment         Docker / AWS or equivalent            Application deployment
+  CI/CD              Git-based pipeline                    Automated build/test/deployment
+
+The source architecture specifically proposes Solidity with a local
+Hardhat/Ganache-style network for the MVP, with strict role-based access
+control rather than implementing a full government-grade Hyperledger
+network during the prototype phase.
+
+------------------------------------------------------------------------
+
+# 6. System Users and Roles
+
+## 6.1 Citizen
+
+The citizen-facing portal supports:
+
+-   Registration/login
+-   OTP authentication
+-   Land search using Khasra number
+-   Viewing land/property details
+-   Property verification
+-   Registry appointment booking
+-   Document upload
+-   INR payment
+-   Application tracking
+-   Ownership-history viewing
+-   e-Registry PDF download
+-   Mutation/transfer initiation where applicable
+
+## 6.2 Local Authority
+
+The local authority handles operational verification and
+registry/mutation processing.
 
 Responsibilities include:
 
-* Reviewing verified application information
-* Authorizing blockchain registration
-* Signing the blockchain transaction
-* Registering the verified property
-* Approving ownership transfers on-chain
+-   Secure login
+-   Viewing pending applications
+-   Appointment management
+-   Document verification
+-   e-KYC verification
+-   Property verification
+-   Registry processing
+-   Mutation processing
+-   Approve/reject decisions
+-   Initiating authorized registry workflows
+-   Viewing blockchain transaction status
 
----
+## 6.3 Authorized Registrar
 
-# 8. Technology Stack
+The Authorized Registrar is responsible for the final blockchain
+authorization step.
 
-## 8.1 Frontend
+Responsibilities include:
 
-### React.js
+-   Reviewing an authorized transaction
+-   Signing the blockchain transaction
+-   Sending the transaction through the Registrar wallet
+-   Confirming the transaction
+-   Ensuring the final registry event is recorded
 
-React.js will be used to develop the citizen and government interfaces.
+## 6.4 Government HQ
 
-It will provide:
+Government HQ is primarily an oversight and monitoring layer.
 
-* Component-based development
-* Reusable UI components
-* Dashboard interfaces
-* Forms
-* Application tracking
-* Government verification screens
+It can provide:
 
-### Vite
+-   District/office analytics
+-   Registration reports
+-   Mutation reports
+-   Revenue/payment reporting
+-   Turnaround-time reporting
+-   Pending backlog monitoring
+-   Stalled application monitoring
+-   Workload monitoring
+-   Repeated rejection analysis
+-   Hash mismatch alerts
+-   SLA breach alerts
+-   Audit information
 
-Vite will be used as the frontend build tool.
+Approval decisions remain part of the operational authority/registrar
+workflow rather than HQ analytics.
 
-### Tailwind CSS
+## 6.5 Admin
 
-Tailwind CSS will be used for responsive and consistent UI development.
+The administrative layer manages system configuration and controlled
+access.
 
-### Framer Motion
+Typical responsibilities:
 
-Framer Motion can be used for UI transitions and animations.
+-   User/role administration
+-   System configuration
+-   Access management
+-   Monitoring
+-   Operational maintenance
 
----
+------------------------------------------------------------------------
 
-# 9. Backend Technology
+# 7. Citizen Portal Workflow
 
-## 9.1 Node.js
+## 7.1 Citizen Registration/Login
 
-Node.js will be used as the backend runtime environment.
-
-It is responsible for:
-
-* API execution
-* Authentication
-* Application processing
-* Verification workflows
-* Payment verification
-* Blockchain communication
-
-## 9.2 Express.js
-
-Express.js will provide the REST API layer.
-
-Major backend responsibilities include:
-
-* Authentication
-* Authorization
-* Property management
-* Document management
-* KYC processing
-* Payment processing
-* Hash generation
-* Blockchain interaction
-* Audit logging
-
----
-
-# 10. Database Architecture
-
-The database stores application-level information.
-
-The workflow allows either PostgreSQL or MongoDB. For the implementation, the project can select one database rather than implementing both simultaneously.
-
-### Recommended implementation
-
-**PostgreSQL + Prisma**
-
-PostgreSQL is suitable because the B.H.U.M.I. workflow contains strong relationships between:
-
-* Users
-* Properties
-* Applications
-* Documents
-* Payments
-* Transfers
-* Verification records
-* Ownership records
-* Audit records
-
----
-
-# 11. Database Components
-
-The major database entities are:
-
-```text
-Users
+``` text
+Citizen
   |
-  ├── Applications
-  ├── KYC Records
-  └── Ownership Records
-
-Properties
+  v
+Register / Login
   |
-  ├── Applications
-  ├── Documents
-  ├── Ownership History
-  └── Transfers
-
-Applications
+  v
+OTP Verification
   |
-  ├── Documents
-  ├── Verification
-  ├── Payment
-  └── Blockchain Registration
-
-Transfers
-  |
-  ├── New Owner
-  ├── Documents
-  ├── Payment
-  ├── Verification
-  └── Blockchain Transaction
+  v
+Citizen Dashboard
 ```
 
----
+The authentication system should use secure session/JWT handling and
+role-based authorization.
 
-# 12. Database Schema
+## 7.2 Land Search by Khasra Number
 
-## 12.1 Users
+``` text
+Citizen enters Khasra Number
+          |
+          v
+Backend Land Search API
+          |
+          v
+PostgreSQL Land Records
+          |
+          v
+Property / Land Details
+          |
+          v
+Verification
+```
 
-| Field         | Description               |
-| ------------- | ------------------------- |
-| id            | Unique user identifier    |
-| name          | User's name               |
-| email         | User email                |
-| phone         | User phone number         |
-| password_hash | Encrypted/hashed password |
-| role          | Citizen or official role  |
-| status        | Account status            |
-| created_at    | Account creation time     |
-| updated_at    | Last update time          |
+The search result can contain:
 
----
+-   Khasra number
+-   Property ID
+-   District
+-   Tehsil
+-   Village
+-   Area
+-   Land type
+-   Current recorded status
+-   Relevant registration information
 
-# 13. KYC Records
+If an on-chain record exists, the backend can compare the relevant
+stored hash/reference with the blockchain record.
 
-| Field               | Description                   |
-| ------------------- | ----------------------------- |
-| id                  | Unique KYC record             |
-| user_id             | Associated user               |
-| identity_type       | Type of identity document     |
-| document_reference  | Secure reference to document  |
-| verification_status | Pending / Verified / Rejected |
-| verified_by         | Government official           |
-| verified_at         | Verification timestamp        |
+## 7.3 Land Verification
 
-Sensitive identity information should remain off-chain.
+``` text
+Land Search
+    |
+    v
+View Land Details
+    |
+    v
+Verify Property Information
+    |
+    +----> On-chain record exists?
+    |          |
+    |          +--> Yes: compare relevant hash/reference
+    |          |
+    |          +--> No: show off-chain registry status
+    |
+    v
+Continue to appointment / application
+```
 
----
+A matching cryptographic fingerprint provides evidence that the
+referenced data/document has not changed relative to the committed
+blockchain record.
 
-# 14. Properties
+------------------------------------------------------------------------
 
-| Field              | Description                            |
-| ------------------ | -------------------------------------- |
-| id                 | Internal property ID                   |
-| property_id        | Public application property identifier |
-| survey_number      | Survey number                          |
-| district           | District                               |
-| tehsil             | Tehsil                                 |
-| village            | Village                                |
-| area               | Property area                          |
-| land_type          | Residential / Commercial / Other       |
-| current_owner_id   | Current owner                          |
-| status             | Property status                        |
-| blockchain_tx_hash | Blockchain transaction reference       |
-| created_at         | Creation time                          |
-| updated_at         | Last update time                       |
+# 8. Registry Appointment Workflow
 
----
-
-# 15. Property Documents
-
-| Field               | Description                    |
-| ------------------- | ------------------------------ |
-| id                  | Document ID                    |
-| property_id         | Associated property            |
-| document_type       | Document category              |
-| storage_reference   | Secure file location           |
-| sha256_hash         | Cryptographic hash             |
-| verification_status | Verification result            |
-| uploaded_by         | User who uploaded document     |
-| verified_by         | Official who verified document |
-| created_at          | Upload timestamp               |
-
----
-
-# 16. Applications
-
-| Field            | Description                       |
-| ---------------- | --------------------------------- |
-| id               | Application ID                    |
-| applicant_id     | Citizen who submitted application |
-| property_id      | Related property                  |
-| application_type | Registration / Transfer           |
-| status           | Current application status        |
-| submitted_at     | Submission timestamp              |
-| reviewed_at      | Review timestamp                  |
-| approved_by      | Government official               |
-| rejection_reason | Reason for rejection              |
-
----
-
-# 17. Payments
-
-| Field             | Description                   |
-| ----------------- | ----------------------------- |
-| id                | Payment ID                    |
-| application_id    | Related application           |
-| amount            | Amount in INR                 |
-| gateway_reference | Payment gateway reference     |
-| status            | Pending / Successful / Failed |
-| payment_method    | Selected payment method       |
-| created_at        | Payment timestamp             |
-
-Citizens interact with the payment system using INR. They are not required to purchase cryptocurrency.
-
----
-
-# 18. Verification Records
-
-| Field           | Description                  |
-| --------------- | ---------------------------- |
-| id              | Verification ID              |
-| application_id  | Related application          |
-| kyc_status      | KYC verification result      |
-| document_status | Document verification result |
-| property_status | Property verification result |
-| verified_by     | Government official          |
-| remarks         | Verification remarks         |
-| verified_at     | Verification timestamp       |
-
----
-
-# 19. Ownership History
-
-| Field              | Description            |
-| ------------------ | ---------------------- |
-| id                 | Record ID              |
-| property_id        | Property               |
-| previous_owner_id  | Previous owner         |
-| new_owner_id       | New owner              |
-| transfer_id        | Associated transfer    |
-| blockchain_tx_hash | Blockchain transaction |
-| transferred_at     | Transfer timestamp     |
-
----
-
-# 20. Audit Logs
-
-| Field       | Description            |
-| ----------- | ---------------------- |
-| id          | Audit record           |
-| user_id     | User performing action |
-| action      | Action performed       |
-| entity_type | Related entity         |
-| entity_id   | Related record         |
-| timestamp   | Action time            |
-| metadata    | Additional information |
-
----
-
-# 21. Document Storage Architecture
-
-B.H.U.M.I. does not store complete sensitive documents directly on blockchain.
-
-The process is:
-
-```text
-Document Upload
+``` text
+Select Property
       |
-      ▼
-File Validation
+      v
+Select Office / Appointment Slot
       |
-      ▼
+      v
+Upload Required Documents
+      |
+      v
+Make INR Payment
+      |
+      v
+Application ID Generated
+      |
+      v
+Pending Verification
+      |
+      v
+Local Authority Review
+      |
+      +---- Rejected ---> Resubmission
+      |
+      +---- Approved --> Registry Processing
+```
+
+The application and appointment information remains in PostgreSQL.
+
+Payment credentials and sensitive payment information are handled
+through the payment gateway rather than stored directly in the
+blockchain.
+
+------------------------------------------------------------------------
+
+# 9. Property Registration Workflow
+
+## 9.1 Complete Flow
+
+``` text
+Citizen Login
+      |
+      v
+Search Land by Khasra
+      |
+      v
+Verify Land Details
+      |
+      v
+Book Registry Appointment
+      |
+      v
+Upload Documents + KYC
+      |
+      v
+Make INR Payment
+      |
+      v
+Application Created
+      |
+      v
+Local Authority Verification
+      |
+      +---- Rejected --> Resubmit / Correct
+      |
+      +---- Approved
+              |
+              v
+        Registry Processing
+              |
+              v
+        Generate SHA-256 Hashes
+              |
+              v
+        Authorized Registrar
+              |
+              v
+        Smart Contract
+              |
+              v
+           Blockchain
+              |
+              v
+       Registration Confirmed
+              |
+              v
+       Ownership History
+              |
+              v
+        e-Registry PDF
+```
+
+## 9.2 Verification Before Blockchain Submission
+
+The backend should validate:
+
+-   User authorization
+-   Required documents
+-   KYC status
+-   Property existence
+-   Property status
+-   Ownership information
+-   Relevant restrictions/encumbrances where supported
+-   Duplicate/conflicting claims where supported
+-   Document integrity
+-   Payment status
+-   Application status
+
+Only an authorized workflow should proceed to the final blockchain
+transaction.
+
+------------------------------------------------------------------------
+
+# 10. Verification Architecture
+
+The verification process is divided into three major areas.
+
+## 10.1 KYC Verification
+
+Validates the identity information required by the workflow.
+
+Sensitive KYC information remains off-chain.
+
+## 10.2 Document Verification
+
+The system validates uploaded property documents and stores the actual
+files in secure off-chain storage.
+
+A SHA-256 fingerprint is generated for the document.
+
+``` text
+Document
+   |
+   v
 Secure Storage
-      |
-      ▼
-SHA-256 Hash Generation
-      |
-      ▼
-Government Verification
-      |
-      ▼
-Hash Recorded On-Chain
-```
-
-Possible storage systems include:
-
-* IPFS
-* Amazon S3
-* Secure local storage for prototype development
-
----
-
-# 22. Document Hashing
-
-Each verified document can be processed using SHA-256.
-
-Example:
-
-```text
-Original Document
-       |
-       ▼
-    SHA-256
-       |
-       ▼
+   |
+   v
+SHA-256
+   |
+   v
 Document Hash
-       |
-       ▼
-Blockchain
+   |
+   v
+Blockchain Record
 ```
 
-If the document changes later, its SHA-256 hash will also change.
+The blockchain stores the hash, not the actual PDF/document.
 
-Therefore, the system can compare the current document hash with the blockchain-recorded hash.
+## 10.3 Property Verification
 
----
+Property verification checks the land record and relevant property
+information before registration or transfer.
 
-# 23. Owner Photo Hash
+Where field verification is required, it is part of the government
+operational workflow.
 
-The owner photograph can also be hashed.
+------------------------------------------------------------------------
 
-The original photograph remains off-chain.
+# 11. Hashing Architecture
 
-```text
-Owner Photograph
-       |
-       ▼
-    SHA-256
-       |
-       ▼
-Photo Hash
-       |
-       ▼
-Blockchain
-```
-
-The blockchain does not store the complete photograph.
-
----
-
-# 24. Metadata Hash
-
-Relevant verified property metadata can also be converted into a cryptographic hash.
+SHA-256 is used to create a deterministic cryptographic fingerprint.
 
 For example:
 
-```text
-Property Metadata
-      |
-      ▼
-Canonical Data Format
-      |
-      ▼
+``` text
+Uploaded Sale Deed
+       |
+       v
 SHA-256
-      |
-      ▼
-Metadata Hash
-      |
-      ▼
-Blockchain
+       |
+       v
+0x / bytes32-style document fingerprint
 ```
 
-This provides a mechanism for later verification of the recorded metadata.
+The same document contents produce the same hash. If the contents are
+changed, the resulting hash changes.
 
----
+The project should treat the hash as an **integrity proof**, not as the
+document itself.
 
-# 25. Data Storage Strategy
+------------------------------------------------------------------------
 
-| Data                     | Storage                   |
-| ------------------------ | ------------------------- |
-| User Profile             | Off-chain Database        |
-| Aadhaar/KYC Information  | Secure Off-chain Storage  |
-| Owner Photograph         | Secure Off-chain Storage  |
-| Property Documents       | Secure Off-chain Storage  |
-| Property Metadata        | Database                  |
-| Payment Information      | Database/Payment Provider |
-| Application Data         | Database                  |
-| Property ID              | Blockchain                |
-| Owner Blockchain Address | Blockchain                |
-| Document Hash            | Blockchain                |
-| Photo Hash               | Blockchain                |
-| Metadata Hash            | Blockchain                |
-| Registration Timestamp   | Blockchain                |
-| Ownership History        | Blockchain                |
-| Registry Status          | Blockchain                |
+# 12. Blockchain Architecture
 
----
+## 12.1 Smart Contract
 
-# 26. Smart Contract Architecture
+The central smart contract is:
 
-The primary smart contract is:
+`contracts/src/LandRegistry.sol`
 
-```text
-LandRegistry.sol
-```
+A representative property structure is:
 
-The contract represents the blockchain-side property registry state.
-
-A property can contain:
-
-```solidity
+``` solidity
 struct Property {
-
     bytes32 propertyId;
-
     address currentOwner;
-
     bytes32 documentHash;
-
     bytes32 ownerPhotoHash;
-
     bytes32 metadataHash;
-
     uint256 registeredAt;
-
     uint256 lastTransferAt;
-
     PropertyStatus status;
-
     bool exists;
 }
 ```
 
----
+## 12.2 Property Status
 
-# 27. Property Status
+The architecture uses the following lifecycle states:
 
-The smart contract can use:
-
-```solidity
-enum PropertyStatus {
-
-    Pending,
-
-    Verified,
-
-    Active,
-
-    Frozen,
-
-    Disputed
-}
+``` text
+Pending
+Verified
+Active
+Frozen
+Disputed
 ```
 
-These states correspond to the property lifecycle defined by the project workflow.
+The operational system can additionally maintain application-level
+states such as approved/rejected/resubmission where needed.
 
----
+## 12.3 Core Contract Operations
 
-# 28. Smart Contract Functions
+The planned contract interface includes operations such as:
 
-The contract may contain functions such as:
-
-```text
+``` text
 registerProperty()
 transferOwnership()
 freezeProperty()
@@ -681,15 +721,11 @@ getCurrentOwner()
 getOwnershipHistory()
 ```
 
-Access to sensitive state-changing functions should be restricted to authorized accounts.
+## 12.4 Contract Events
 
----
+Important events include:
 
-# 29. Smart Contract Events
-
-Important blockchain events may include:
-
-```text
+``` text
 PropertyRegistered
 OwnershipTransferred
 PropertyFrozen
@@ -698,484 +734,507 @@ PropertyDisputed
 PropertyDisputeResolved
 ```
 
-Events provide an auditable history of important state changes.
+The backend should listen for relevant blockchain events so the
+PostgreSQL state can be synchronized after confirmed blockchain
+activity.
 
----
+------------------------------------------------------------------------
 
-# 30. Blockchain Authorization
+# 13. Mutation / Ownership Transfer Workflow
 
-Only an authorized Registrar should be able to perform final blockchain registration.
+Mutation is one of the core B.H.U.M.I. workflows.
 
-```text
-Government Verification
-          |
-          ▼
-Verification Successful
-          |
-          ▼
-Hash Generation
-          |
-          ▼
-Authorized Registrar
-          |
-          ▼
-Smart Contract
-          |
-          ▼
-Blockchain
-```
-
-The Registrar's blockchain identity is controlled using an authorized wallet.
-
----
-
-# 31. Backend-First Blockchain Architecture
-
-The frontend should not directly perform the core registry blockchain transaction.
-
-The architecture follows:
-
-```text
-Citizen / Government
-        |
-        ▼
-Frontend
-        |
-        ▼
-Backend
-        |
-        ▼
-Verification
-        |
-        ▼
-Hash Generation
-        |
-        ▼
-Authorized Registrar
-        |
-        ▼
-Smart Contract
-        |
-        ▼
-Blockchain
-```
-
-This keeps the blockchain transaction workflow under backend and authorized government control.
-
----
-
-# 32. Complete Property Registration Workflow
-
-The property registration process is:
-
-```text
-Citizen
-   |
-   ▼
-Login / OTP
-   |
-   ▼
-Citizen Dashboard
-   |
-   ▼
-Submit Property Application
-   |
-   ▼
-Upload Documents
-   |
-   ▼
-Backend
-   |
-   ▼
-Application ID Created
-   |
-   ▼
-Pending Verification
-   |
-   ▼
-Government Dashboard
-   |
-   ├── KYC Verification
-   |
-   ├── Document Verification
-   |
-   └── Property Verification
-   |
-   ▼
-Verification Decision
-   |
-   ├───────────────┐
-   |               |
- Reject          Approve
-   |               |
-   ▼               ▼
-Application      Property
-Rejected         Verified
-                   |
-                   ▼
-             SHA-256 Hashing
-                   |
-                   ▼
-          Authorized Registrar
-                   |
-                   ▼
-             Smart Contract
-                   |
-                   ▼
-               Blockchain
-                   |
-                   ▼
-          Property Registered
-                   |
-                   ▼
-           Ownership History
-```
-
----
-
-# 33. Government Verification Workflow
-
-```text
-Government Official Login
-          |
-          ▼
-Pending Applications
-          |
-          ▼
-Open Application
-          |
-     ┌────┼────┐
-     ▼    ▼    ▼
-   KYC  Docs Property
- Verify Verify Verify
-     |    |    |
-     └────┼────┘
-          |
-          ▼
-   All Checks Passed?
-       /       \
-     No         Yes
-     |           |
-     ▼           ▼
-Reject /      Approve
-Resubmit      Application
-                 |
-                 ▼
-            Hash Generation
-                 |
-                 ▼
-         Authorized Registrar
-                 |
-                 ▼
-              Blockchain
-```
-
----
-
-# 34. INR Payment Architecture
-
-B.H.U.M.I. provides an INR-based payment experience.
-
-Citizens do not need to understand cryptocurrency.
-
-The citizen sees:
-
-```text
-Property Registration / Transfer Fee
-
-Amount: ₹25,000
-
-[ Pay Now ]
-```
-
-The payment gateway handles the INR payment.
-
-After successful payment:
-
-```text
-Citizen Pays INR
-       |
-       ▼
-Payment Gateway
-       |
-       ▼
-Backend Confirms Payment
-       |
-       ▼
-Application Continues
-```
-
----
-
-# 35. Blockchain Gas Architecture
-
-Citizens should not be required to:
-
-```text
-Buy ETH
-   ↓
-Connect MetaMask
-   ↓
-Pay Gas
-   ↓
-Register Property
-```
-
-Instead:
-
-```text
-Citizen Pays INR
-       |
-       ▼
-Backend Confirms Payment
-       |
-       ▼
-Backend / Authorized Wallet
-       |
-       ▼
-Pays Blockchain Gas
-       |
-       ▼
-Smart Contract
-       |
-       ▼
-Blockchain
-```
-
-This provides a Web2-style user experience while blockchain operates as the underlying infrastructure.
-
----
-
-# 36. Ownership Transfer Workflow
-
-After a property has been registered, ownership can be transferred through a controlled process.
-
-```text
+``` text
 Current Owner
-      |
-      ▼
-Initiate Transfer
-      |
-      ▼
-Transfer Request
-      |
-      ▼
-New Owner KYC
-      |
-      ▼
-Upload Transfer Documents
-      |
-      ▼
-Pay Transfer Fee
-      |
-      ▼
-Government Verification
-      |
-      ▼
-Approved?
-    /     \
-  No       Yes
-  |         |
-  ▼         ▼
-Reject   Generate Hashes
-            |
-            ▼
-     Authorized Registrar
-            |
-            ▼
-       Smart Contract
-            |
-            ▼
-      Owner Updated
-            |
-            ▼
-    Ownership History
+     |
+     v
+Initiate Transfer / Mutation
+     |
+     v
+New Owner e-KYC
+     |
+     v
+Upload Mutation Documents
+     |
+     v
+Pay Mutation Fee
+     |
+     v
+Local Authority Verification
+     |
+     +---- Rejected --> Resubmission
+     |
+     +---- Approved
+             |
+             v
+      Update PostgreSQL
+             |
+             v
+      Generate New Hashes
+             |
+             v
+      Authorized Registrar
+             |
+             v
+      Smart Contract
+             |
+             v
+      Ownership Transfer
+             |
+             v
+      Blockchain Event
+             |
+             v
+      Backend Event Listener
+             |
+             v
+      PostgreSQL Synchronization
+             |
+             v
+      Ownership History Updated
+             |
+             v
+      Updated e-Registry PDF
 ```
 
----
+The backend event listener is important because PostgreSQL and the
+blockchain are separate state systems. The application should not assume
+that a submitted transaction is equivalent to a confirmed transaction.
 
-# 37. Property Lifecycle
+------------------------------------------------------------------------
 
-The B.H.U.M.I. property lifecycle is:
+# 14. Dual-State Synchronization
 
-```text
-Pending
-   |
-   ├── Rejected
-   |
-   ▼
-Verified
-   |
-   ▼
-Active
-   |
-   ├── Disputed
-   |
-   └── Frozen
+B.H.U.M.I. maintains two important states:
+
+1.  PostgreSQL application state
+2.  Blockchain ledger state
+
+A failure can occur if the blockchain transaction succeeds but the
+application database is not updated.
+
+Therefore:
+
+``` text
+Smart Contract
+     |
+     v
+Blockchain Event
+     |
+     v
+Backend Event Listener
+     |
+     v
+Validate / Process Event
+     |
+     v
+Update PostgreSQL
 ```
 
-Ownership transfer can occur while the property is active.
+The source architecture specifically identifies this dual-state
+synchronization problem as a major engineering challenge.
 
-A simplified state model is:
+The application should track:
 
-```text
-                 ┌──────────────┐
-                 │    Pending   │
-                 └──────┬───────┘
-                        |
-              Government Approval
-                        |
-                        ▼
-                 ┌──────────────┐
-                 │   Verified   │
-                 └──────┬───────┘
-                        |
-                Blockchain Record
-                        |
-                        ▼
-                 ┌──────────────┐
-          ┌──────│    Active    │──────┐
-          |      └──────────────┘      |
-          |                             |
-          ▼                             ▼
-     ┌──────────┐                  ┌──────────┐
-     │ Disputed │                  │  Frozen  │
-     └────┬─────┘                  └────┬─────┘
-          |                             |
-          └───────────► Active ◄────────┘
+-   Transaction hash
+-   Contract address
+-   Network/chain ID
+-   Transaction status
+-   Confirmation state
+-   Event data
+-   Timestamp
+-   Related property/application ID
+
+------------------------------------------------------------------------
+
+# 15. e-Registry PDF Workflow
+
+The e-Registry PDF is generated off-chain after the relevant
+registration workflow reaches its final state.
+
+``` text
+Registration Confirmed
+        |
+        v
+Collect Verified Property Data
+        |
+        v
+Collect Registration Metadata
+        |
+        v
+Include Document Hash
+        |
+        v
+Include Blockchain Transaction Reference
+        |
+        v
+Generate e-Registry PDF
+        |
+        v
+Store / Serve Securely
+        |
+        v
+Citizen Download
 ```
 
----
+The PDF can contain:
 
-# 38. Blockchain Record Example
+-   Property ID
+-   Khasra number
+-   Owner information appropriate for the document
+-   Property details
+-   Registration information
+-   Document hash
+-   Blockchain transaction reference
+-   Current status
+-   Relevant timestamps
 
-A blockchain property record may contain:
+------------------------------------------------------------------------
 
-| Field            | Example              |
-| ---------------- | -------------------- |
-| Property ID      | PROP-MP-BPL-001      |
-| Current Owner    | `0x1234...ABCD`      |
-| Document Hash    | `8e7d...a93f`        |
-| Owner Photo Hash | `91ab...73cd`        |
-| Metadata Hash    | `a821...9d72`        |
-| Registered At    | Blockchain Timestamp |
-| Status           | ACTIVE               |
+# 16. Property Lifecycle
 
----
-
-# 39. Off-Chain Property Record Example
-
-```json
-{
-  "propertyId": "PROP-MP-BPL-001",
-  "surveyNumber": "123/4",
-  "district": "Bhopal",
-  "tehsil": "Huzur",
-  "village": "Example Village",
-  "area": "1500 sq.ft",
-  "landType": "Residential",
-  "status": "VERIFIED"
-}
+``` text
+                 +----------------+
+                 |    Pending     |
+                 +-------+--------+
+                         |
+                         v
+                 +----------------+
+                 |    Verified    |
+                 +-------+--------+
+                         |
+                         v
+                 +----------------+
+                 |     Active     |
+                 +---+--------+---+
+                     |        |
+             Freeze  |        | Dispute
+                     v        v
+                 +------+  +---------+
+                 |Frozen|  |Disputed |
+                 +--+---+  +----+----+
+                    |           |
+                    +----+------+
+                         |
+                         v
+                       Active
 ```
 
-The complete property information remains in the application database.
+Ownership transfer/mutation occurs as a controlled transition of an
+active property.
 
----
+------------------------------------------------------------------------
 
-# 40. Security Architecture
+# 17. Data Storage Strategy
 
-## 40.1 Authentication
+  -----------------------------------------------------------------------
+  Data                    Storage                 On-Chain Representation
+  ----------------------- ----------------------- -----------------------
+  User profile            PostgreSQL              None
 
-The platform should support:
+  KYC/identity data       Secure off-chain        Hash/reference only
+                          storage                 where required
 
-* Secure login
-* JWT or secure session authentication
-* OTP-based authentication where applicable
-* Government official authentication
-* Password hashing
+  Owner photo             Secure off-chain        Photo hash where
+                          storage                 required
 
----
+  Land/Khasra records     PostgreSQL              Selected property
+                                                  references/hashes
 
-## 40.2 Authorization
+  Property metadata       PostgreSQL              Metadata hash
 
-Role-based access control should be implemented.
+  Sale deed / property    IPFS/S3/secure storage  Document hash
+  documents                                       
 
-Example:
+  Applications            PostgreSQL              None
 
-| Role                | Access                                  |
-| ------------------- | --------------------------------------- |
-| Citizen             | Own applications and property requests  |
-| Government Official | Verification and application processing |
-| Registrar           | Blockchain registration                 |
-| Admin               | System administration                   |
+  Appointments            PostgreSQL              None
 
----
+  Payment records         PostgreSQL/payment      None
+                          provider                
 
-# 41. Blockchain Security
+  Audit logs              PostgreSQL              Blockchain tx/event
+                                                  references
 
-The blockchain architecture should follow:
+  e-Registry PDF          Off-chain               Transaction/hash
+                                                  references
 
-* Authorized Registrar wallet
-* Backend-controlled blockchain transactions
-* Smart contract access control
-* No private keys in frontend
-* Secure environment variables
-* Transaction logging
-* Event monitoring
-* Validation before blockchain submission
+  Property ID             PostgreSQL + blockchain Property ID
 
----
+  Current owner           Application +           Owner address
+  blockchain identity     blockchain              
 
-# 42. Sensitive Data Protection
+  Ownership history       PostgreSQL projection + Ownership events
+                          blockchain              
 
-The following information must **not** be stored directly on a public blockchain:
+  Registration timestamp  PostgreSQL + blockchain Timestamp
 
-* Aadhaar number
-* Aadhaar document
-* Full owner photograph
-* Phone number
-* Residential address
-* Personal KYC information
-* Complete property documents
-* Payment credentials
+  Property status         PostgreSQL + blockchain Contract status
+                          where applicable        
+  -----------------------------------------------------------------------
 
-Instead, only appropriate cryptographic proofs and registry information should be stored on-chain.
+------------------------------------------------------------------------
 
----
+# 18. Database Architecture
 
-# 43. Project Folder Structure
+The relational database should support the application's operational
+workflow.
 
-```text
+A logical schema includes:
+
+``` text
+users
+roles
+user_roles
+
+properties
+property_owners
+transfers
+transfer_status_history
+
+documents
+blockchain_transactions
+blockchain_events
+
+applications
+appointments
+kyc_records
+verification_records
+payments
+mutations
+
+audit_logs
+notifications
+
+registry_records
+analytics / reporting data
+alerts
+```
+
+## 18.1 Core Relationships
+
+``` text
+User
+ |
+ +---- Applications
+ |
+ +---- KYC
+ |
+ +---- Roles
+ |
+ +---- Audit Logs
+ |
+ +---- Notifications
+
+Property
+ |
+ +---- Property Owner(s)
+ |
+ +---- Documents
+ |
+ +---- Applications
+ |
+ +---- Transfers
+ |
+ +---- Mutations
+ |
+ +---- Blockchain Transactions
+ |
+ +---- Blockchain Events
+ |
+ +---- Registry Records
+```
+
+The exact physical schema can evolve during implementation, but
+relational links between property, owner, application, transaction, and
+mutation data should remain explicit.
+
+------------------------------------------------------------------------
+
+# 19. API Architecture
+
+The backend is organized around REST-style modules.
+
+Recommended API groups:
+
+``` text
+/api/auth
+/api/users
+/api/land
+/api/properties
+/api/applications
+/api/appointments
+/api/kyc
+/api/documents
+/api/verification
+/api/payments
+/api/registry
+/api/mutations
+/api/ownership
+/api/blockchain
+/api/analytics
+/api/audit
+```
+
+Examples:
+
+``` text
+POST   /api/auth/login
+POST   /api/auth/verify-otp
+
+GET    /api/land/search?khasraNumber=...
+GET    /api/properties/:propertyId
+
+POST   /api/applications
+GET    /api/applications/:id
+
+POST   /api/appointments
+GET    /api/appointments/:id
+
+POST   /api/documents
+POST   /api/verification/:applicationId
+
+POST   /api/payments
+GET    /api/payments/:id
+
+POST   /api/registry/:applicationId/approve
+POST   /api/mutations
+GET    /api/ownership/:propertyId/history
+
+GET    /api/blockchain/transactions/:propertyId
+GET    /api/analytics/*
+GET    /api/audit/*
+```
+
+All endpoints must be protected according to role and jurisdiction.
+
+------------------------------------------------------------------------
+
+# 20. Security Architecture
+
+## 20.1 Authentication
+
+Use:
+
+-   Secure login
+-   OTP where required
+-   JWT or secure session mechanism
+-   Strong password hashing where passwords are used
+-   Session expiry
+-   Secure cookies where applicable
+
+## 20.2 Authorization
+
+Use RBAC for:
+
+``` text
+Citizen
+Local Authority
+Authorized Registrar
+Government HQ
+Admin
+```
+
+Local government users should be restricted to the appropriate
+jurisdiction wherever applicable.
+
+## 20.3 Blockchain Security
+
+-   Smart-contract role checks
+-   Registrar-only final authorization
+-   Backend-controlled transaction flow
+-   No private keys in frontend code
+-   Private keys stored in environment secrets/secrets manager
+-   Transaction logging
+-   Contract-address/network validation
+
+## 20.4 Data Security
+
+Sensitive information must remain off-chain.
+
+Examples:
+
+-   Identity documents
+-   Aadhaar/KYC information
+-   Phone numbers
+-   Residential addresses
+-   Private documents
+-   Payment credentials
+-   Private keys
+
+## 20.5 Environment Secrets
+
+Never commit real secrets to Git.
+
+Use `.env` locally and a secure secrets manager in production.
+
+------------------------------------------------------------------------
+
+# 21. Environment Configuration
+
+Example backend configuration:
+
+``` env
+NODE_ENV=development
+PORT=5000
+
+DATABASE_URL=postgresql://postgres:password@localhost:5432/bhumi
+
+JWT_SECRET=CHANGE_THIS_TO_A_LONG_RANDOM_SECRET
+JWT_EXPIRES_IN=1d
+
+CORS_ORIGIN=http://localhost:5173
+
+STORAGE_PATH=./storage/documents
+DOCUMENT_MAX_SIZE_MB=10
+ENCRYPTION_KEY=CHANGE_THIS_TO_A_SECURE_KEY
+
+BLOCKCHAIN_RPC_URL=http://127.0.0.1:8545
+BLOCKCHAIN_CHAIN_ID=31337
+LAND_REGISTRY_CONTRACT_ADDRESS=0x...
+REGISTRAR_WALLET_ADDRESS=0x...
+REGISTRAR_PRIVATE_KEY=DO_NOT_COMMIT_THIS
+
+PAYMENT_GATEWAY_KEY=CHANGE_THIS
+PAYMENT_GATEWAY_SECRET=CHANGE_THIS
+
+LOG_LEVEL=info
+```
+
+Frontend configuration:
+
+``` env
+VITE_API_BASE_URL=http://localhost:5000/api
+VITE_BLOCKCHAIN_CHAIN_ID=31337
+VITE_LAND_REGISTRY_CONTRACT_ADDRESS=0x...
+```
+
+**Do not place private keys, payment secrets, or server-side credentials
+in `VITE_*` variables.**
+
+------------------------------------------------------------------------
+
+# 22. Recommended Project Structure
+
+``` text
 BHUMI/
-│
 ├── frontend/
 │   ├── public/
 │   └── src/
-│       ├── assets/
 │       ├── components/
-│       │   ├── ui/
-│       │   ├── forms/
-│       │   ├── property/
-│       │   ├── transfer/
-│       │   ├── documents/
-│       │   └── blockchain/
-│       │
 │       ├── pages/
 │       │   ├── auth/
 │       │   ├── citizen/
-│       │   ├── government/
-│       │   └── registrar/
-│       │
-│       ├── layouts/
+│       │   └── government/
+│       │       ├── local/
+│       │       └── hq/
 │       ├── hooks/
 │       ├── services/
 │       ├── api/
 │       ├── routes/
 │       ├── types/
 │       ├── utils/
-│       ├── constants/
-│       ├── App.tsx
-│       └── main.tsx
+│       └── App.tsx
 │
 ├── backend/
 │   └── src/
@@ -1186,626 +1245,572 @@ BHUMI/
 │       ├── middleware/
 │       ├── services/
 │       │   ├── auth/
+│       │   ├── landSearch/
+│       │   ├── appointment/
 │       │   ├── kyc/
-│       │   ├── property/
 │       │   ├── documents/
-│       │   ├── payments/
 │       │   ├── verification/
+│       │   ├── registry/
+│       │   ├── mutation/
+│       │   ├── payments/
 │       │   ├── hashing/
 │       │   ├── blockchain/
+│       │   ├── analytics/
 │       │   └── audit/
-│       │
-│       ├── utils/
-│       ├── jobs/
-│       ├── app.ts
-│       └── server.ts
+│       └── utils/
 │
 ├── contracts/
 │   ├── src/
 │   │   └── LandRegistry.sol
 │   ├── script/
-│   │   └── deploy.ts
-│   ├── test/
-│   │   ├── LandRegistry.test.ts
-│   │   ├── authorization.test.ts
-│   │   └── transfer.test.ts
-│   └── hardhat.config.ts
+│   └── test/
 │
 ├── docs/
-│   └── architecture/
+│   ├── ARCHITECTURE_AND_WORKFLOW.md
+│   └── assets/
+│       └── bhumi-system-architecture.png
 │
 ├── storage/
-│   └── documents/
-│
 ├── .env.example
 ├── docker-compose.yml
 ├── package.json
 └── README.md
 ```
 
----
+------------------------------------------------------------------------
 
-# 44. Environment Variables
+# 23. End-to-End System Workflow
 
-## Backend
+The complete system can be summarized as:
 
-```env
-NODE_ENV=development
-
-PORT=5000
-
-DATABASE_URL=postgresql://postgres:password@localhost:5432/bhumi
-
-JWT_SECRET=CHANGE_THIS_TO_A_LONG_RANDOM_SECRET
-
-JWT_EXPIRES_IN=1d
-
-CORS_ORIGIN=http://localhost:5173
-
-STORAGE_PATH=./storage/documents
-
-DOCUMENT_MAX_SIZE_MB=10
-
-ENCRYPTION_KEY=CHANGE_THIS_TO_A_SECURE_KEY
-
-BLOCKCHAIN_RPC_URL=http://127.0.0.1:8545
-
-BLOCKCHAIN_CHAIN_ID=31337
-
-LAND_REGISTRY_CONTRACT_ADDRESS=0x...
-
-REGISTRAR_WALLET_ADDRESS=0x...
-
-REGISTRAR_PRIVATE_KEY=DO_NOT_COMMIT_THIS
-
-PAYMENT_GATEWAY_KEY=CHANGE_THIS
-
-PAYMENT_GATEWAY_SECRET=CHANGE_THIS
-
-LOG_LEVEL=info
+``` text
+Citizen
+  |
+  v
+Login / OTP
+  |
+  v
+Search Khasra
+  |
+  v
+View / Verify Land
+  |
+  v
+Book Appointment
+  |
+  v
+Upload Documents + KYC
+  |
+  v
+INR Payment
+  |
+  v
+Application Created
+  |
+  v
+Local Authority Verification
+  |
+  +------ Rejected ------> Resubmit
+  |
+  +------ Approved
+              |
+              v
+       Registry Processing
+              |
+              v
+          SHA-256
+              |
+              v
+      Authorized Registrar
+              |
+              v
+       LandRegistry.sol
+              |
+              v
+          Blockchain
+              |
+              v
+       Confirmed Event
+              |
+              v
+      Backend Event Listener
+              |
+              v
+     PostgreSQL Synchronization
+              |
+              v
+      Ownership History Updated
+              |
+              v
+       e-Registry PDF
+              |
+              v
+       Citizen / Government
 ```
 
----
+------------------------------------------------------------------------
 
-# 45. Frontend Environment Variables
+# 24. Error and Failure Handling
 
-```env
-VITE_API_BASE_URL=http://localhost:5000/api
-
-VITE_BLOCKCHAIN_CHAIN_ID=31337
-
-VITE_LAND_REGISTRY_CONTRACT_ADDRESS=0x...
-```
-
-Private credentials must never be placed inside frontend environment variables.
-
-The following must remain backend-only:
-
-```text
-REGISTRAR_PRIVATE_KEY
-JWT_SECRET
-ENCRYPTION_KEY
-DATABASE_PASSWORD
-PAYMENT_GATEWAY_SECRET
-```
-
----
-
-# 46. API Architecture
-
-The backend REST API can be divided into:
-
-```text
-/api/auth
-/api/users
-/api/properties
-/api/applications
-/api/kyc
-/api/documents
-/api/verification
-/api/payments
-/api/transfers
-/api/ownership
-/api/blockchain
-/api/audit
-```
-
-Example endpoints:
-
-```text
-POST   /api/auth/register
-POST   /api/auth/login
-
-POST   /api/properties
-GET    /api/properties/:id
-
-POST   /api/applications
-GET    /api/applications/:id
-
-POST   /api/documents
-GET    /api/documents/:id
-
-POST   /api/verification/:id
-POST   /api/applications/:id/approve
-POST   /api/applications/:id/reject
-
-POST   /api/payments/create
-POST   /api/payments/verify
-
-POST   /api/transfers
-GET    /api/transfers/:id
-
-POST   /api/blockchain/register
-GET    /api/blockchain/:propertyId
-
-GET    /api/audit/:propertyId
-```
-
----
-
-# 47. End-to-End System Workflow
-
-The complete B.H.U.M.I. workflow is:
-
-```text
-                     CITIZEN
-                        |
-                        ▼
-                  Login / OTP
-                        |
-                        ▼
-                Citizen Dashboard
-                        |
-                        ▼
-               Submit Property
-                        |
-                        ▼
-                Upload Documents
-                        |
-                        ▼
-                 Make INR Payment
-                        |
-                        ▼
-                     BACKEND
-                        |
-                        ▼
-               Create Application
-                        |
-                        ▼
-              Government Dashboard
-                        |
-              ┌─────────┼─────────┐
-              ▼         ▼         ▼
-             KYC      Document   Property
-          Verification Verification Verification
-              └─────────┼─────────┘
-                        |
-                        ▼
-               Verification Result
-                    /         \
-                  Reject      Approve
-                    |           |
-                    ▼           ▼
-                Rejected    Generate Hashes
-                                |
-                                ▼
-                         Authorized Registrar
-                                |
-                                ▼
-                          LandRegistry.sol
-                                |
-                                ▼
-                             Blockchain
-                                |
-                    ┌───────────┼───────────┐
-                    ▼           ▼           ▼
-                Ownership    Document      Audit
-                  History      Proof        Trail
-```
-
----
-
-# 48. Ownership Transfer Workflow
-
-```text
-Current Owner
-      |
-      ▼
-Transfer Request
-      |
-      ▼
-New Owner KYC
-      |
-      ▼
-Transfer Documents
-      |
-      ▼
-INR Transfer Fee
-      |
-      ▼
-Government Verification
-      |
-      ▼
-Approval
-      |
-      ▼
-Generate Hashes
-      |
-      ▼
-Authorized Registrar
-      |
-      ▼
-Smart Contract
-      |
-      ▼
-Blockchain
-      |
-      ▼
-Current Owner Updated
-      |
-      ▼
-Ownership History Updated
-```
-
----
-
-# 49. Why Blockchain Is Used
-
-A traditional database can be modified through authorized database operations.
-
-B.H.U.M.I. adds a blockchain proof layer:
-
-```text
-Verified Record
-      |
-      ▼
-SHA-256 Hash
-      |
-      ▼
-Blockchain
-      |
-      ▼
-Timestamp + Immutable History
-```
-
-Blockchain provides:
-
-* Tamper-evident records
-* Verifiable timestamps
-* Ownership history
-* Cryptographic proof
-* Auditability
-* Shared trust between authorized stakeholders
-
-However, blockchain does not itself prove that a document is legally genuine.
-
-Government verification remains an essential part of the system.
-
----
-
-# 50. Error and Failure Handling
-
-The system should handle cases such as:
+The system should explicitly handle:
 
 ### Payment Failure
 
-```text
+``` text
 Payment Failed
-      |
-      ▼
-Application remains incomplete
-      |
-      ▼
-User can retry payment
+   |
+   v
+Application remains unpaid/pending
+   |
+   v
+Citizen retries payment
 ```
 
-### Verification Failure
+### Document Verification Failure
 
-```text
-Verification Failed
-      |
-      ▼
-Application Rejected / Resubmission Requested
+``` text
+Invalid / incomplete document
+   |
+   v
+Verification rejected
+   |
+   v
+Citizen receives status/reason
+   |
+   v
+Resubmission
+```
+
+### KYC Failure
+
+``` text
+KYC failed
+   |
+   v
+Application cannot proceed to final approval
 ```
 
 ### Blockchain Transaction Failure
 
-```text
-Blockchain Transaction Failed
-      |
-      ▼
-Record Failure
-      |
-      ▼
-Retry / Registrar Review
+``` text
+Registrar submits transaction
+       |
+       v
+Transaction fails
+       |
+       v
+Record failure + transaction/error information
+       |
+       v
+Do not mark registration as blockchain-confirmed
 ```
 
 ### Hash Mismatch
 
-```text
-Stored Document
+``` text
+Stored document
       |
-      ▼
-Generate Current Hash
+      v
+Generate current SHA-256
       |
-      ▼
-Compare With Blockchain Hash
+      v
+Compare with committed hash
       |
-      ├── Match → Verified
+      +---- Match ----> Integrity verified
       |
-      └── Mismatch → Flag for Review
+      +---- Mismatch -> Flag for investigation
 ```
 
----
+### Database/Blockchain Desynchronization
 
-# 51. Testing Strategy
+Use transaction/event tracking and blockchain event listeners to
+reconcile PostgreSQL with confirmed blockchain events.
 
-## 51.1 Unit Testing
+------------------------------------------------------------------------
 
-Test individual:
+# 25. Testing Strategy
 
-* Authentication functions
-* Hash generation
-* Validation functions
-* Property services
-* Payment services
-* Verification services
-
-## 51.2 Smart Contract Testing
+## 25.1 Unit Tests
 
 Test:
 
-* Property registration
-* Ownership transfer
-* Registrar authorization
-* Invalid transactions
-* Property status changes
-* Event generation
+-   Authentication
+-   RBAC
+-   Land search
+-   Application creation
+-   Appointment handling
+-   Document hashing
+-   Verification logic
+-   Payment state handling
+-   Mutation logic
 
-## 51.3 Integration Testing
+## 25.2 Smart Contract Tests
 
-Test complete flows:
+Test:
 
-```text
-Citizen
-   ↓
-Application
-   ↓
-Payment
-   ↓
-Government Verification
-   ↓
-Hash Generation
-   ↓
-Registrar
-   ↓
-Blockchain
+-   Property registration
+-   Ownership transfer
+-   Role restrictions
+-   Freeze/unfreeze
+-   Dispute handling
+-   Invalid property IDs
+-   Unauthorized calls
+-   Event emission
+
+## 25.3 Integration Tests
+
+Test:
+
+``` text
+React
+  -> Express API
+  -> PostgreSQL
+  -> Document Storage
+  -> Hashing
+  -> Smart Contract
+  -> Blockchain Event
+  -> PostgreSQL Synchronization
 ```
 
----
+## 25.4 Failure Tests
 
-# 52. Deployment Architecture
+Explicitly test:
 
-For prototype development:
+-   Payment failure
+-   KYC failure
+-   Invalid document
+-   Rejected application
+-   Blockchain transaction failure
+-   Hash mismatch
+-   Duplicate/conflicting ownership attempt
+-   Backend restart during pending blockchain confirmation
+-   Blockchain event synchronization
 
-```text
-Frontend
-   |
-   ▼
-Vite Development Server
-   |
-   ▼
-Node.js / Express
-   |
-   ├── PostgreSQL
-   ├── Local File Storage
-   └── Local Ethereum Network
-          |
-          ▼
-        Hardhat
+------------------------------------------------------------------------
+
+# 26. Deployment Architecture
+
+## 26.1 MVP / Development
+
+The project can be developed using:
+
+``` text
+React + Vite
+       |
+Node.js + Express
+       |
+PostgreSQL
+       |
+Local Hardhat/Ganache-style EVM Network
 ```
 
-For future deployment:
+This avoids real blockchain gas costs during development.
 
-```text
-Users
-  |
-  ▼
-Cloud Frontend
-  |
-  ▼
-Cloud Backend
-  |
-  ├── Managed Database
-  ├── Secure Object Storage
-  ├── Payment Gateway
-  └── Blockchain Network
-```
+## 26.2 Prototype Testnet
 
----
+A public EVM testnet such as Sepolia may be used for prototype
+demonstration where appropriate.
 
-# 53. Development Environment
+The Registrar wallet should be funded with test ETH, and its private key
+must remain server-side.
 
-The project can use:
+## 26.3 Production Direction
 
-* Node.js
-* npm
-* React
-* Vite
-* PostgreSQL
-* Prisma
-* Solidity
-* Hardhat
-* ethers.js
-* Docker
-* Git
-* GitHub
+A production deployment would require:
 
-For local blockchain development, Hardhat can provide an Ethereum-compatible development network.
+-   Official government land-record integration
+-   Legal and policy approval
+-   Government identity/KYC integration
+-   Production payment integration
+-   Secure key management
+-   High-availability infrastructure
+-   Monitoring and alerting
+-   Backup and disaster recovery
+-   Appropriate permissioned/public blockchain architecture
+-   Formal security auditing
+-   Data protection and retention controls
 
----
+------------------------------------------------------------------------
 
-# 54. Git Workflow
+# 27. Git and Repository Workflow
 
-The project should use a controlled Git workflow.
+The project should follow a branch-based workflow.
 
-```text
+``` text
 main
  |
- ├── feature/frontend
- ├── feature/backend
- ├── feature/blockchain
- ├── feature/payment
- ├── feature/verification
- └── feature/document-management
+ +-- feature/auth
+ +-- feature/land-search
+ +-- feature/registry
+ +-- feature/mutation
+ +-- feature/smart-contract
+ +-- feature/frontend-citizen
+ +-- feature/government-dashboard
 ```
 
-Changes should be developed in feature branches and merged into the main branch after review.
+Recommended process:
 
----
+1.  Pull the latest `main`.
+2.  Create a feature branch.
+3.  Make the required changes.
+4.  Test locally.
+5.  Review the changes.
+6.  Commit with a meaningful message.
+7.  Push the branch.
+8.  Open a pull request.
+9.  Review and merge into `main`.
 
-# 55. Future Scope
+Do not push feature work directly to `main`.
 
-The current architecture can later be extended with:
+------------------------------------------------------------------------
 
-* GIS-based land mapping
-* AI-assisted document verification
-* OCR for land documents
-* Duplicate property detection
-* Mobile application
-* Government API integration
-* Existing land-record system interoperability
-* Digital identity integration
-* Automated mutation workflows
-* SMS and email notifications
-* Government analytics dashboard
-* Automated compliance checks
-* Multi-state deployment
-* Rural citizen support
+# 28. MVP Implementation Priorities
 
-These features are considered future extensions rather than mandatory components of the core architecture.
+The source architecture identifies the core MVP workflow as the
+priority.
 
----
+### Layer 1 --- Backend and Database
 
-# 56. Social and Economic Impact
+-   PostgreSQL schema
+-   Node.js/Express APIs
+-   Authentication
+-   Basic CRUD
+-   Property and owner relationships
 
-## Transparency
+### Layer 2 --- Smart Contract
 
-Authorized stakeholders can track verified property records and ownership history.
+-   `LandRegistry.sol`
+-   Role-based access control
+-   Property registration
+-   Ownership transfer
+-   Event emission
+-   Local testnet deployment
+-   Contract tests
 
-## Trust
+### Layer 3 --- Dashboards
 
-Cryptographic hashes provide tamper-evident proof of recorded information.
+-   Citizen portal
+-   Government/Registrar dashboard
+-   Application status
+-   Verification workflow
 
-## Efficiency
+### Layer 4 --- Integration
 
-Digital workflows can reduce manual coordination between citizens and government authorities.
+-   Ethers.js
+-   Backend-to-contract communication
+-   Blockchain event listener
+-   PostgreSQL synchronization
 
-## Accessibility
+The project should first demonstrate a successful end-to-end property
+registration/transfer and mutation event before expanding into advanced
+features.
 
-Citizens interact with the platform using INR rather than directly handling cryptocurrency.
+------------------------------------------------------------------------
 
-## Auditability
+# 29. Future Scope
 
-Blockchain provides a verifiable history of important registered transactions.
+Potential future extensions include:
 
----
+-   GIS/map integration
+-   AI/OCR-assisted document processing
+-   Duplicate-property detection
+-   Fraud/anomaly detection
+-   Mobile application
+-   Government API interoperability
+-   Digital identity integration
+-   SMS/email notifications
+-   Multi-state deployment
+-   Rural/offline-friendly workflows
+-   Broader institutional interoperability
+-   Advanced analytics
 
-# 57. Important Design Limitations
+These features should remain secondary to the core MVP workflow.
 
-B.H.U.M.I. is currently a **prototype and architectural model**.
+------------------------------------------------------------------------
 
-A production deployment would require integration with:
+# 30. Known Engineering Challenges
 
-* Actual government land-record systems
-* Legal frameworks
-* Government identity infrastructure
-* Official KYC infrastructure
-* Approved payment providers
-* Data protection requirements
-* Government authentication systems
-* Appropriate blockchain infrastructure
+## 30.1 Dual-State Synchronization
 
-The blockchain component should therefore be treated as a **verification and audit layer**, not as a replacement for legally recognized government land records.
+PostgreSQL and blockchain must remain consistent.
 
----
+## 30.2 Smart Contract Immutability
 
-# 58. Core Innovation
+Contract logic must be tested thoroughly before deployment because
+deployed smart-contract logic is difficult to change.
 
-The core innovation of B.H.U.M.I. is the combination of:
+## 30.3 Asynchronous Blockchain UX
 
-```text
-Government Verification
-          +
-Secure Off-Chain Storage
-          +
-Cryptographic Hashing
-          +
-Authorized Blockchain Registration
-          +
-INR-Based Payments
-          +
-Ownership History
-          =
-Transparent Hybrid Land Registry
+Blockchain confirmation may take time.
+
+The frontend should display:
+
+``` text
+Pending
+Processing
+Transaction Submitted
+Confirmation Waiting
+Confirmed
+Failed
 ```
 
----
+The UI should expose the transaction reference where appropriate rather
+than immediately claiming completion after submission.
 
-# 59. Final Architecture Summary
+## 30.4 Key Management
 
-B.H.U.M.I. follows a hybrid architecture in which the **application and government verification workflows remain primarily Web2-based**, while blockchain provides a trusted cryptographic proof and audit layer.
+Registrar/private keys must never be exposed to the browser or committed
+to the repository.
 
-The complete system can be summarized as:
+## 30.5 Scope Control
 
-```text
+AI, advanced GIS, drone mapping, and other advanced features should not
+distract from the MVP until the core registration → transfer → mutation
+flow is functioning.
+
+------------------------------------------------------------------------
+
+# 31. Example Property Record
+
+A representative application-level property record:
+
+``` json
+{
+  "propertyId": "PROP-MP-BPL-001",
+  "khasraNumber": "123/4",
+  "district": "Bhopal",
+  "tehsil": "Huzur",
+  "village": "Example Village",
+  "area": "1500 sq.ft",
+  "landType": "Residential",
+  "status": "VERIFIED"
+}
+```
+
+A corresponding blockchain-oriented record can contain:
+
+``` text
+Property ID
+Current Owner
+Document Hash
+Owner Photo Hash
+Metadata Hash
+Registered At
+Last Transfer At
+Status
+```
+
+------------------------------------------------------------------------
+
+# 32. Architectural Boundaries
+
+The following boundaries are important:
+
+### Boundary 1 --- Sensitive Data
+
+Sensitive personal and identity data stays off-chain.
+
+### Boundary 2 --- Blockchain Writes
+
+Only authorized backend/Registrar workflows perform final blockchain
+writes.
+
+### Boundary 3 --- Application Database
+
+PostgreSQL is the operational system used for application queries,
+workflow state, and user-facing operations.
+
+### Boundary 4 --- Blockchain Ledger
+
+The blockchain is used for finalized cryptographic proof, ownership
+state/history, and auditability.
+
+### Boundary 5 --- Legal Record
+
+The prototype must not be represented as a replacement for legally
+authoritative government land records.
+
+------------------------------------------------------------------------
+
+# 33. Final Architecture Summary
+
+B.H.U.M.I. combines a conventional government-oriented web application
+with a blockchain trust layer.
+
+``` text
                     B.H.U.M.I.
                         |
-        ┌───────────────┴───────────────┐
+        +---------------+---------------+
         |                               |
-     CITIZEN                         GOVERNMENT
+   Web Application                 Government Portal
         |                               |
-        ▼                               ▼
-  React Frontend                Government Dashboard
-        |                               |
-        └───────────────┬───────────────┘
+        +---------------+---------------+
                         |
-                        ▼
-               Node.js + Express
+                 Node.js / Express
                         |
-        ┌───────────────┼────────────────┐
-        |               |                |
-        ▼               ▼                ▼
-    Database        File Storage    INR Payment
-        |               |                |
-        └───────────────┼────────────────┘
+        +---------------+---------------+
+        |               |               |
+   PostgreSQL     Secure Storage    External Services
+        |               |               |
+        +---------------+---------------+
                         |
-                        ▼
-                  Verification
+                 Verification Layer
                         |
-              ┌─────────┼─────────┐
-              ▼         ▼         ▼
-             KYC      Documents Property
-              └─────────┼─────────┘
+                    SHA-256
                         |
-                        ▼
-                   SHA-256
-                        |
-                        ▼
               Authorized Registrar
                         |
-                        ▼
-                LandRegistry.sol
+                 LandRegistry.sol
                         |
-                        ▼
-                    Blockchain
+                   Blockchain
                         |
-        ┌───────────────┼───────────────┐
-        ▼               ▼               ▼
-   Ownership        Document          Audit
-     History           Proof           Trail
+              Immutable Audit Trail
+                        |
+        +---------------+---------------+
+        |               |               |
+     Citizen       Government        HQ Analytics
+     Access          Access             / Audit
 ```
 
-**B.H.U.M.I. therefore provides a complete digital workflow from citizen application to government verification, payment, cryptographic proof generation, authorized blockchain registration, and long-term ownership history.**
+The architecture is intentionally hybrid:
 
+-   **Web2 handles speed, workflow, sensitive information, and
+    operational records.**
+-   **Cryptographic hashing provides document integrity evidence.**
+-   **Web3 provides finalized ownership events and a tamper-evident
+    audit layer.**
+-   **Government authorization remains part of the registration and
+    mutation process.**
+-   **The backend synchronizes confirmed blockchain events back into the
+    application database.**
 
+This separation keeps the prototype practical while preserving the
+central B.H.U.M.I. objective: a unified, transparent, auditable
+property-registration and mutation workflow.
+
+------------------------------------------------------------------------
+
+## 34. Reference Documents
+
+This architecture consolidates the project's existing architecture and
+workflow materials. The repository should treat this file as the single
+high-level technical reference, while detailed implementation notes may
+be maintained in separate documents as the project grows.
+
+### Suggested `docs/` structure
+
+``` text
+docs/
+├── ARCHITECTURE_AND_WORKFLOW.md
+├── SYSTEM_ARCHITECTURE_DIAGRAM.md
+├── api/
+├── database/
+├── blockchain/
+├── workflows/
+└── decisions/
+```
+
+------------------------------------------------------------------------
+
+**B.H.U.M.I. --- Blockchain Hosted Unified Mutation Infrastructure**\
+*Technical Architecture & System Workflow*
