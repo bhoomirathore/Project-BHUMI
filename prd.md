@@ -1,7 +1,3 @@
-
-
----
-
 # B.H.U.M.I. — Product Requirements Document
 
 ## Blockchain Hosted Unified Mutation Infrastructure
@@ -10,7 +6,6 @@
 **Document:** Product Requirements Document
 **Version:** 1.1
 **Status:** Locked for MVP — Phase 1
-**Target:** Smart India Hackathon / Capstone Project
 
 ---
 
